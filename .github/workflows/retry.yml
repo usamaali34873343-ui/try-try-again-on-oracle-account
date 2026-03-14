@@ -1,11 +1,14 @@
 name: Oracle A1 VM Auto Retry
+
 on:
   schedule:
     - cron: '*/15 * * * *'
   workflow_dispatch:
+
 jobs:
   create-vm:
     runs-on: ubuntu-latest
+
     steps:
       - name: Install OCI CLI
         run: pip install oci-cli --quiet
@@ -42,9 +45,9 @@ jobs:
               --ssh-authorized-keys-file ~/.ssh/id_rsa.pub 2>&1 || true)
             echo "$RESULT"
             if echo "$RESULT" | grep -q "lifecycle-state"; then
-              echo "✅ SUCCESS on AD-$AD!"
+              echo "SUCCESS on AD-$AD!"
               exit 0
             fi
-            echo "❌ AD-$AD failed - capacity nahi"
+            echo "AD-$AD failed - capacity nahi"
           done
-          echo "⏳ All ADs failed - retry in 15 min automatically"
+          echo "All ADs failed - retry in 15 min automatically"
