@@ -1,32 +1,25 @@
 name: Oracle A1 VM Auto Retry
-
 on:
   schedule:
     - cron: '*/15 * * * *'
   workflow_dispatch:
-
 jobs:
   create-vm:
     runs-on: ubuntu-latest
     steps:
       - name: Install OCI CLI
         run: |
-          curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh > install.sh
-          chmod +x install.sh
-          ./install.sh --accept-all-defaults
-          echo "$HOME/bin" >> $GITHUB_PATH
+          pip install oci-cli --quiet
 
       - name: Configure OCI
         run: |
           mkdir -p ~/.oci
-          cat > ~/.oci/config << EOF
-          [DEFAULT]
-          user=${{ secrets.USER_OCID }}
-          fingerprint=${{ secrets.OCI_FINGERPRINT }}
-          tenancy=${{ secrets.TENANCY_OCID }}
-          region=${{ secrets.OCI_REGION }}
-          key_file=/home/runner/.oci/key.pem
-          EOF
+          echo "[DEFAULT]" > ~/.oci/config
+          echo "user=${{ secrets.USER_OCID }}" >> ~/.oci/config
+          echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" >> ~/.oci/config
+          echo "tenancy=${{ secrets.TENANCY_OCID }}" >> ~/.oci/config
+          echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
+          echo "key_file=/home/runner/.oci/key.pem" >> ~/.oci/config
           printf '%s' "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/key.pem
           chmod 600 ~/.oci/key.pem ~/.oci/config
 
@@ -49,6 +42,6 @@ jobs:
               echo "SUCCESS on AD-$AD!"
               exit 0
             fi
-            echo "AD-$AD failed, trying next..."
+            echo "AD-$AD failed"
           done
-          echo "All ADs failed - will retry in 15 min automatically"
+          echo "All failed - retry in 15 min"
