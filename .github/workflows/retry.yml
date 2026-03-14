@@ -12,7 +12,7 @@ jobs:
 
       - name: Configure OCI
         run: |
-          mkdir -p ~/.oci
+          mkdir -p ~/.oci ~/.ssh
           echo "[DEFAULT]" > ~/.oci/config
           echo "user=${{ secrets.USER_OCID }}" >> ~/.oci/config
           echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" >> ~/.oci/config
@@ -21,10 +21,13 @@ jobs:
           echo "key_file=/home/runner/.oci/key.pem" >> ~/.oci/config
           printf '%s' "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/key.pem
           chmod 600 ~/.oci/key.pem ~/.oci/config
+          ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N "" -q
+
+      - name: Test OCI Connection
+        run: oci iam region list --output table
 
       - name: Try Create VM
         run: |
-          ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N "" -q
           for AD in 1 2 3; do
             echo "=== Trying AD-$AD ==="
             RESULT=$(oci compute instance launch \
@@ -39,9 +42,9 @@ jobs:
               --ssh-authorized-keys-file ~/.ssh/id_rsa.pub 2>&1 || true)
             echo "$RESULT"
             if echo "$RESULT" | grep -q "lifecycle-state"; then
-              echo "SUCCESS on AD-$AD!"
+              echo "✅ SUCCESS on AD-$AD!"
               exit 0
             fi
-            echo "AD-$AD failed"
+            echo "❌ AD-$AD failed - capacity nahi"
           done
-          echo "All failed - retry in 15 min"
+          echo "⏳ All ADs failed - retry in 15 min automatically"
