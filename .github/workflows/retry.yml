@@ -22,42 +22,4 @@ jobs:
           echo "[DEFAULT]" > ~/.oci/config
           echo "user=${{ secrets.USER_OCID }}" >> ~/.oci/config
           echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" >> ~/.oci/config
-          echo "tenancy=${{ secrets.TENANCY_OCID }}" >> ~/.oci/config
-          echo "region=${{ secrets.OCI_REGION }}" >> ~/.oci/config
-          echo "key_file=~/.oci/key.pem" >> ~/.oci/config
-          echo "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/key.pem
-          chmod 600 ~/.oci/key.pem ~/.oci/config
-
-      - name: Check if VM already exists
-        id: check_vm
-        run: |
-          COUNT=$(oci compute instance list \
-            --compartment-id ${{ secrets.TENANCY_OCID }} \
-            --display-name "Roofing-Machine" \
-            --lifecycle-state RUNNING 2>/dev/null | grep -c "display-name" || echo "0")
-          echo "count=$COUNT" >> $GITHUB_OUTPUT
-
-      - name: Try Create VM on all ADs
-        if: steps.check_vm.outputs.count == '0'
-        run: |
-          for AD in 1 2 3; do
-            echo "Trying AD-$AD..."
-            RESULT=$(oci compute instance launch \
-              --compartment-id ${{ secrets.TENANCY_OCID }} \
-              --availability-domain "hWQW:US-ASHBURN-AD-$AD" \
-              --display-name "Roofing-Machine" \
-              --image-id ocid1.image.oc1.iad.aaaaaaaahk7zm5s5gv4imyzgui5c77uzfpn72blj3od2icmohxzv3zpuiikq \
-              --shape "VM.Standard.A1.Flex" \
-              --shape-config '{"ocpus":4,"memoryInGBs":24}' \
-              --subnet-id ocid1.subnet.oc1.iad.aaaaaaaaiobhami2yqammfaswb7r3biry6wjst7kvfilimz53qmxopsr6o4q \
-              --assign-public-ip true \
-              --ssh-authorized-keys-file /dev/null 2>&1 || true)
-            if echo "$RESULT" | grep -q "PROVISIONING\|RUNNING"; then
-              echo "✅ VM CREATED ON AD-$AD!"
-              echo "$RESULT" | grep -E 'lifecycle|"id"' | head -5
-              exit 0
-            else
-              echo "❌ AD-$AD failed - capacity nahi"
-            fi
-          done
-          echo "⏳ All ADs failed - will retry in 15 minutes"
+          echo "tenancy=${{ secrets.TENANCY_OCID }}" >>
