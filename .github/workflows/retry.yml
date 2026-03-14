@@ -19,7 +19,36 @@ jobs:
       - name: Configure OCI
         run: |
           mkdir -p ~/.oci
-          echo "[DEFAULT]" > ~/.oci/config
-          echo "user=${{ secrets.USER_OCID }}" >> ~/.oci/config
-          echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" >> ~/.oci/config
-          echo "tenancy=${{ secrets.TENANCY_OCID }}" >>
+          cat > ~/.oci/config << EOF
+          [DEFAULT]
+          user=${{ secrets.USER_OCID }}
+          fingerprint=${{ secrets.OCI_FINGERPRINT }}
+          tenancy=${{ secrets.TENANCY_OCID }}
+          region=${{ secrets.OCI_REGION }}
+          key_file=/home/runner/.oci/key.pem
+          EOF
+          printf '%s' "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/key.pem
+          chmod 600 ~/.oci/key.pem ~/.oci/config
+
+      - name: Try Create VM
+        run: |
+          for AD in 1 2 3; do
+            echo "=== Trying AD-$AD ==="
+            RESULT=$(oci compute instance launch \
+              --compartment-id ${{ secrets.TENANCY_OCID }} \
+              --availability-domain "hWQW:US-ASHBURN-AD-$AD" \
+              --display-name "Roofing-Machine" \
+              --image-id ocid1.image.oc1.iad.aaaaaaaahk7zm5s5gv4imyzgui5c77uzfpn72blj3od2icmohxzv3zpuiikq \
+              --shape "VM.Standard.A1.Flex" \
+              --shape-config '{"ocpus":4,"memoryInGBs":24}' \
+              --subnet-id ocid1.subnet.oc1.iad.aaaaaaaaiobhami2yqammfaswb7r3biry6wjst7kvfilimz53qmxopsr6o4q \
+              --assign-public-ip true \
+              --ssh-authorized-keys-file ~/.ssh/id_rsa.pub 2>&1 || true)
+            echo "$RESULT"
+            if echo "$RESULT" | grep -q "lifecycle-state"; then
+              echo "SUCCESS on AD-$AD!"
+              exit 0
+            fi
+            echo "AD-$AD failed, trying next..."
+          done
+          echo "All ADs failed - will retry in 15 min automatically"
