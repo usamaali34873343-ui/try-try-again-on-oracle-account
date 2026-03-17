@@ -50,4 +50,4 @@ jobs:
             fi
             echo "AD-$AD failed - capacity nahi"
           done
-          echo "All ADs failed - retry in 15 min automatically"
+          echo "All ADs failed - retry in 1 min automatically"
