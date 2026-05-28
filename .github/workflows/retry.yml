@@ -25,7 +25,7 @@ jobs:
           printf '%s' "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/key.pem
           chmod 600 ~/.oci/key.pem ~/.oci/config
           ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N "" -q
-
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
       - name: Test OCI Connection
         run: oci iam region list --output table
 
