@@ -1,14 +1,11 @@
 name: Oracle A1 VM Auto Retry
-
 on:
   schedule:
     - cron: '*/15 * * * *'
   workflow_dispatch:
-
 jobs:
   create-vm:
     runs-on: ubuntu-latest
-
     steps:
       - name: Install OCI CLI
         run: pip install oci-cli --quiet
@@ -26,6 +23,7 @@ jobs:
           chmod 600 ~/.oci/key.pem ~/.oci/config
           ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -N "" -q
           echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/id_rsa.pub
+
       - name: Test OCI Connection
         run: oci iam region list --output table
 
@@ -50,11 +48,12 @@ jobs:
             fi
             echo "AD-$AD failed - capacity nahi"
           done
-          echo "All ADs failed - retry in 8 min automatically"
-          - name: Add Cloud Shell Key to Instance
+          echo "All ADs failed - retry in 15 min automatically"
+
+      - name: Add Cloud Shell Key to Existing Instance
         run: |
-          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/cloudshell.pub
+          sleep 30
           ssh -o StrictHostKeyChecking=no \
             -i ~/.ssh/id_rsa \
             ubuntu@158.101.106.132 \
-            "echo '${{ secrets.SSH_PUBLIC_KEY }}' >> ~/.ssh/authorized_keys"
+            "echo '${{ secrets.SSH_PUBLIC_KEY }}' >> ~/.ssh/authorized_keys && echo SUCCESS"
